@@ -13,13 +13,13 @@ typedef struct{
     char name[32],damageType[32];
     int damageValue, lenRunes, level;
     float range, weigth;
-    rune runes[4];
+    rune *runes[4];
 } weapon;
 
 typedef struct{
     char name[32];
     int hp, strength, speed, level, lenCharWeapons;
-    weapon charWeapons[2];
+    weapon *charWeapons[2];
 } character;
 
 void bufferCleaner(){
@@ -81,38 +81,6 @@ int findCharacter(character vet[],int len,char charName[],int print){
     return -1;
 }
 
-int addToParty(character vetParty[],character vetCharacters[],int *len, int index){
-    if(*len<4){
-        if(findCharacter(vetParty,*len,vetCharacters[index].name,0)!=-1){
-            printf("The character is already in the party!\n\n");
-            return -1;
-        }
-        vetParty[*len]=vetCharacters[index];
-        (*len)++;
-        printf("\n%s has joined the party!\n\n",vetCharacters[index].name);
-        return 1;
-    }
-    printf("\nParty is full!\n\n");
-    return -1;
-}
-
-int removeFromParty(character vetParty[], character vetCharacters[], int *len, int indexCharacter){
-
-    int index = findCharacter(vetParty,*len,vetCharacters[indexCharacter].name,0);
-
-    if(index!=-1){
-        for(int i=0;i<*len;i++){
-            vetParty[i]=vetParty[i+1];
-        }
-        (*len)--;
-        printf("\n%s was removed from the party.\n\n",vetCharacters[indexCharacter].name);
-        return 1;
-    }
-    printf("\n%s was already not in the party.\n\n",vetCharacters[indexCharacter].name);
-    return -1;
-
-}
-
 int createWeapon(weapon vetWeapons[], int *len){
     char testName[32];
     getName(testName,"Weapon");
@@ -159,13 +127,12 @@ int findWeapon(weapon vetWeapons[], int len, char weaponName[],int print){
 int addWeaponToCharacter(weapon vetWeapons[], character vetCharacters[], int indexWeapon, int indexCharacter){
     if(vetCharacters[indexCharacter].lenCharWeapons<2){
         for(int i=0;i<vetCharacters[indexCharacter].lenCharWeapons;i++){
-            if(strcmp(vetCharacters[indexCharacter].charWeapons[i].name,vetWeapons[indexWeapon].name)==0){
+            if(strcmp(vetCharacters[indexCharacter].charWeapons[i]->name,vetWeapons[indexWeapon].name)==0){
             printf("\n%s has already equipped %s\n\n",vetCharacters[indexCharacter].name,vetWeapons[indexWeapon].name);
             return -1;
             }
         }
-
-        vetCharacters[indexCharacter].charWeapons[vetCharacters[indexCharacter].lenCharWeapons]=vetWeapons[indexWeapon];
+        vetCharacters[indexCharacter].charWeapons[vetCharacters[indexCharacter].lenCharWeapons]=&vetWeapons[indexWeapon];
         (vetCharacters[indexCharacter].lenCharWeapons)++;
         printf("\n%s was successfully added to %s's inventory!\n\n",vetWeapons[indexWeapon].name,vetCharacters[indexCharacter].name);
         return 1;
@@ -176,7 +143,7 @@ int addWeaponToCharacter(weapon vetWeapons[], character vetCharacters[], int ind
 
 int removeWeaponFromCharacter(weapon vetWeapons[], character vetCharacters[], int indexWeapon, int indexCharacter){
     for(int i=0;i<vetCharacters[indexCharacter].lenCharWeapons;i++){
-        if(strcmp(vetWeapons[indexWeapon].name,vetCharacters[indexCharacter].charWeapons[i].name)==0){
+        if(strcmp(vetWeapons[indexWeapon].name,vetCharacters[indexCharacter].charWeapons[i]->name)==0){
             for(int j=i;j<(vetCharacters[indexCharacter].lenCharWeapons)-1;j++){
                 vetCharacters[indexCharacter].charWeapons[j]=vetCharacters[indexCharacter].charWeapons[j+1];
             }
@@ -236,26 +203,8 @@ int findRune(rune vetRunes[], int len, char runeName[], int print){
     
 }
 
-void showParty(character vetParty[],int len){
-    printf("\n\n----------Party----------\n\n");
-    for(int i=0;i<len;i++){
-        printf("##### Character %d #####\n\n",i+1);
-        printf("Name: %s\n",vetParty[i].name);
-        printf("HP: %d\n",vetParty[i].hp);
-        printf("Stength: %d\n",vetParty[i].strength);
-        printf("Speed: %d\n",vetParty[i].speed);
-        printf("Level: %d\n",vetParty[i].level);
-        printf("Weapons: ");
-        if(vetParty[i].lenCharWeapons!=0){
-            for(int j=0;j<vetParty[i].lenCharWeapons;j++){
-                printf("%s ||",vetParty[i].charWeapons[j].name);
-            }
-        }
-        printf("\n\n");
-    }
-}
-
 void showCharacters(character vetCharacters[],int len){
+
     printf("\n\n----------All Characters----------\n\n");
     for(int i=0;i<len;i++){
             printf("##### Character %d #####\n\n",i+1);
@@ -264,10 +213,59 @@ void showCharacters(character vetCharacters[],int len){
         printf("Stength: %d\n",vetCharacters[i].strength);
         printf("Speed: %d\n",vetCharacters[i].speed);
         printf("Level: %d\n",vetCharacters[i].level);
-        printf("Weapons: ");
+        printf("Weapons: ||");
         if(vetCharacters[i].lenCharWeapons!=0){
             for(int j=0;j<vetCharacters[i].lenCharWeapons;j++){
-                printf("%s ||",vetCharacters[i].charWeapons[j].name);
+                printf("  %s  ||",vetCharacters[i].charWeapons[j]->name);
+            }
+        }
+        printf("\n\n");
+    }
+}
+
+int addToParty(character *vetParty[], character vetCharacters[], int *lenParty, int indexCharacter){
+    if(*lenParty<4){
+        for(int i=0;i<*lenParty;i++){
+            if(strcmp(vetParty[i]->name,vetCharacters[indexCharacter].name)==0){
+                printf("The character is already in the party!\n\n");
+                return -1;
+            }
+        }
+        vetParty[*lenParty]=&vetCharacters[indexCharacter];
+        (*lenParty)++;
+        printf("\n%s has joined the party!\n\n",vetCharacters[indexCharacter].name);
+        return 1;
+    }
+    printf("\nParty is full!\n\n");
+    return -1;
+}
+
+int removeFromParty(character *vetParty[], character vetCharacters[], int *lenParty, int indexCharacter){
+    if(*lenParty>0){
+        for(int i=0;i<*lenParty-1;i++){
+            vetParty[i]=vetParty[i+1];
+        }
+        (*lenParty)--;
+        printf("\n%s was removed from the party.\n\n",vetCharacters[indexCharacter].name);
+        return 1;
+    }
+    printf("\n%s was already not in the party.\n\n",vetCharacters[indexCharacter].name);
+    return -1;
+}
+
+void showParty(character *vetParty[], int lenParty){
+    printf("\n\n----------Party----------\n\n");
+    for(int i=0;i<lenParty;i++){
+        printf("##### Character %d #####\n\n",i+1);
+        printf("Name: %s\n",vetParty[i]->name);
+        printf("HP: %d\n",vetParty[i]->hp);
+        printf("Strength: %d\n",vetParty[i]->strength);
+        printf("Speed: %d\n",vetParty[i]->speed);
+        printf("Level: %d\n",vetParty[i]->level);
+        printf("Weapons: ||");
+        if(vetParty[i]->charWeapons!=0){
+            for(int j=0;j<vetParty[i]->lenCharWeapons;j++){
+                printf("  %s  ||",vetParty[i]->charWeapons[j]->name);
             }
         }
         printf("\n\n");
@@ -276,9 +274,9 @@ void showCharacters(character vetCharacters[],int len){
 
 int main(){
     weapon *weapons = malloc(sizeof(weapon)*20);
-    rune *runes = malloc(sizeof(runes)*80);
+    rune *runes = malloc(sizeof(rune)*80);
     character *characters = malloc(sizeof(character)*10);
-    character *party  = malloc(sizeof(character)*4);
+    character **party  = malloc(sizeof(character*)*4);
     int option=0,lenWeapons=0,lenRunes=0,lenCharacters=0,lenParty=0;
 
     while(option!=-1){
@@ -307,9 +305,9 @@ int main(){
         }else if(option==2){
             char name[32];
             getName(name,"Character");
-            int index = findCharacter(characters,lenCharacters,name,1);
-            if(index!=-1){
-                addToParty(party,characters,&lenParty,index);
+            int indexCharacter = findCharacter(characters,lenCharacters,name,1);
+            if(indexCharacter!=-1){
+                addToParty(party,characters,&lenParty,indexCharacter);
             }
         }else if(option==3){
             char name[32];
