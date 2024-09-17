@@ -204,7 +204,6 @@ int findRune(rune vetRunes[], int len, char runeName[], int print){
 }
 
 void showCharacters(character vetCharacters[],int len){
-
     printf("\n\n----------All Characters----------\n\n");
     for(int i=0;i<len;i++){
             printf("##### Character %d #####\n\n",i+1);
