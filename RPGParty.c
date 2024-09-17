@@ -11,7 +11,7 @@ typedef struct{
 
 typedef struct{
     char name[32],damageType[32];
-    int damageValue, lenRunes, level;
+    int damageValue, lenWeaponRunes, level;
     float range, weigth;
     rune *runes[4];
 } weapon;
@@ -67,10 +67,10 @@ int createCharacter(character vet[], int *len){
     return 1;
 }
 
-int findCharacter(character vet[],int len,char charName[],int print){
+int findCharacter(character vet[],int lenCharacters,char charName[],int print){
     int index;
 
-    for(int i=0;i<len;i++){
+    for(int i=0;i<lenCharacters;i++){
         if(strcmp(vet[i].name,charName)==0){
             return i;
         }
@@ -105,15 +105,15 @@ int createWeapon(weapon vetWeapons[], int *len){
     scanf("%f",&vetWeapons[*len].weigth);
 
     vetWeapons[*len].level=1;
-    vetWeapons[*len].lenRunes=0;
+    vetWeapons[*len].lenWeaponRunes=0;
 
     printf("\n%s was successfully created!\n\n",vetWeapons[*len].name);
     (*len)++;
     return 1;
 }
 
-int findWeapon(weapon vetWeapons[], int len, char weaponName[],int print){
-    for(int i=0;i<len;i++){
+int findWeapon(weapon vetWeapons[], int lenWeapons, char weaponName[],int print){
+    for(int i=0;i<lenWeapons;i++){
         if(strcmp(vetWeapons[i].name,weaponName)==0){
             return i;
         }
@@ -161,8 +161,20 @@ float validateRuneCode(float code){
         float codeF = roundf(code*10)/10;
         return codeF;
     }
-    printf("The rune code must be a number between 1 and 4.9");
+    printf("\nThe rune code must be a number between 1 and 4.9\n\n");
     return -1;
+}
+
+int findRune(rune vetRunes[], int lenRunes, char runeName[], int print){
+    for(int i=0;i<lenRunes;i++){
+        if(strcmp(vetRunes[i].name,runeName)==0){
+            return i;
+        }
+    }
+    if(print==1){
+        printf("\nThere is no rune with this name!\n\n");
+    }
+    return -1; 
 }
 
 int createRune(rune vetRunes[],int *lenRunes){
@@ -175,9 +187,10 @@ int createRune(rune vetRunes[],int *lenRunes){
     }
     vetRunes[*lenRunes].code = runeCode;
 
+    bufferCleaner();
     char testName[32];
     getName(testName,"Rune");
-    if(findRune(vetRunes,lenRunes,testName,0)!=-1){
+    if(findRune(vetRunes,*lenRunes,testName,0)!=-1){
         printf("\nA rune with this name already exists!\n\n");
         return -1;
     }
@@ -190,17 +203,36 @@ int createRune(rune vetRunes[],int *lenRunes){
     return 1;
 }
 
-int findRune(rune vetRunes[], int len, char runeName[], int print){
-    for(int i=0;i<len;i++){
-        if(strcmp(vetRunes[i].name,runeName)==0){
-            return i;
+int addRuneToWeapon(rune vetRunes[], weapon vetWeapons[], int indexRune, int indexWeapon){
+    if(vetWeapons[indexWeapon].lenWeaponRunes<4){
+        for(int i=0;i<vetWeapons[indexWeapon].lenWeaponRunes;i++){
+            if(strcmp(vetWeapons[indexWeapon].runes[i]->name,vetRunes[indexRune].name)==0){
+                printf("\n%s has already equipped %s\n\n",vetWeapons[indexWeapon].name,vetRunes[indexRune].name);
+                return -1;
+            }
+        }
+        vetWeapons[indexWeapon].runes[vetWeapons[indexWeapon].lenWeaponRunes]=&vetRunes[indexRune];
+        (vetWeapons[indexWeapon].lenWeaponRunes)++;
+        printf("\n%s was successfully added to %s\n\n",vetRunes[indexRune].name,vetWeapons[indexWeapon].name);
+        return 1;
+    }
+    printf("\n%s runes space is full!\n\n",vetWeapons[indexWeapon].name);
+    return -1;
+}
+
+int removeRuneFromWeapon(rune vetRunes[], weapon vetWeapons[], int indexRune, int indexWeapon){
+    for(int i=0;i<vetWeapons[indexWeapon].lenWeaponRunes;i++){
+        if(strcmp(vetWeapons[indexWeapon].runes[i]->name,vetRunes[indexRune].name)==0){
+            for(int j=i;j<vetWeapons[indexWeapon].lenWeaponRunes-1;j++){
+                vetWeapons[indexWeapon].runes[j]=vetWeapons[indexWeapon].runes[j+1];
+            }
+            (vetWeapons[indexWeapon].lenWeaponRunes)--; 
+            printf("\n%s was successfully removed from %s\n\n",vetRunes[indexRune].name,vetWeapons[indexWeapon].name);
+            return 1;
         }
     }
-    if(print==1){
-        printf("\nThere is no rune with this name!\n\n");
-    }
+    printf("\n%s was already not equipped\n\n",vetRunes[indexRune].name);
     return -1;
-    
 }
 
 void showCharacters(character vetCharacters[],int len){
@@ -215,7 +247,11 @@ void showCharacters(character vetCharacters[],int len){
         printf("Weapons: ||");
         if(vetCharacters[i].lenCharWeapons!=0){
             for(int j=0;j<vetCharacters[i].lenCharWeapons;j++){
-                printf("  %s  ||",vetCharacters[i].charWeapons[j]->name);
+                printf("  %s (",vetCharacters[i].charWeapons[j]->name);
+                for(int l=0;l<vetCharacters[i].charWeapons[j]->lenWeaponRunes;l++){
+                    printf(" %.1f",vetCharacters[i].charWeapons[j]->runes[l]->code);
+                }
+                printf(" )  ||");
             }
         }
         printf("\n\n");
@@ -252,6 +288,34 @@ int removeFromParty(character *vetParty[], character vetCharacters[], int *lenPa
     return -1;
 }
 
+void showRunes(rune vetRunes[], int lenRunes){
+    printf("\n\n----------All Runes----------\n\n");
+    for(int i=0;i<lenRunes;i++){
+        printf("##### Rune %d #####\n\n",i+1);
+        printf("Name: %s\n",vetRunes[i].name);
+        printf("Code: %.1f\n",vetRunes[i].code);
+        printf("Level: %d\n\n",vetRunes[i].level);
+    }
+}
+
+void showWeapons(weapon vetWeapons[], int lenWeapons){
+    printf("\n\n----------All Weapons----------\n\n");
+    for(int i=0;i<lenWeapons;i++){
+        printf("##### Weapon %d#####\n\n",i+1);
+        printf("Name: %s\n",vetWeapons[i].name);
+        printf("Damage type: %s\n",vetWeapons[i].damageType);
+        printf("Damage value: %d\n",vetWeapons[i].damageValue);
+        printf("Range: %.1f\n",vetWeapons[i].range);
+        printf("Weigth: %.1f\n",vetWeapons[i].weigth);
+        printf("Level: %d\n",vetWeapons[i].level);
+        printf("Runes:");
+        for(int j=0;j<vetWeapons[i].lenWeaponRunes;j++){
+            printf(" %.1f",vetWeapons[i].runes[j]->code);
+        }
+        printf("\n\n");
+    }
+}
+
 void showParty(character *vetParty[], int lenParty){
     printf("\n\n----------Party----------\n\n");
     for(int i=0;i<lenParty;i++){
@@ -264,7 +328,11 @@ void showParty(character *vetParty[], int lenParty){
         printf("Weapons: ||");
         if(vetParty[i]->charWeapons!=0){
             for(int j=0;j<vetParty[i]->lenCharWeapons;j++){
-                printf("  %s  ||",vetParty[i]->charWeapons[j]->name);
+                printf("  %s (",vetParty[i]->charWeapons[j]->name);
+                for(int l=0;l<vetParty[i]->charWeapons[j]->lenWeaponRunes;l++){
+                    printf(" %.1f",vetParty[i]->charWeapons[j]->runes[l]->code);
+                }
+                printf(" ) ||");
             }
         }
         printf("\n\n");
@@ -286,15 +354,15 @@ int main(){
         printf("5- Add weapon to character\n");
         printf("6- Remove weapon from character\n");
         printf("7- Create rune\n");
-        printf("8- Add rune to weapon (UNAVAILABLE)\n");
-        printf("9- Remove rune from weapon (UNAVAILABLE)\n");
-        printf("10- Delete chracter (UNAVAILABLE)\n");
+        printf("8- Add rune to weapon\n");
+        printf("9- Remove rune from weapon\n");
+        printf("10- Delete character (UNAVAILABLE)\n");
         printf("11- Delete weapon (UNAVAILABLE)\n");
         printf("12- Delete rune (UNAVAILABLE)\n");
         printf("13- Show party\n");
         printf("14- Show characters\n");
-        printf("15- Show weapons (UNAVAILABLE)\n");
-        printf("16- Show runes (UNAVAILABLE)\n");
+        printf("15- Show weapons\n");
+        printf("16- Show runes\n");
         printf("\nChoose an option:");
         scanf("%d",&option);
         bufferCleaner();
@@ -344,9 +412,29 @@ int main(){
         }else if(option==7){
             createRune(runes,&lenRunes);
         }else if(option==8){
-
+            char runeName[32];
+            getName(runeName,"Rune");
+            int indexRune = findRune(runes,lenRunes,runeName,1);
+            if(indexRune!=-1){
+                char weaponName[32];
+                getName(weaponName,"Weapon");
+                int indexWeapon = findWeapon(weapons,lenWeapons,weaponName,1);
+                if(indexWeapon!=-1){
+                    addRuneToWeapon(runes,weapons,indexRune,indexWeapon);
+                }
+            }
         }else if(option==9){
-
+            char runeName[32];
+            getName(runeName,"Rune");
+            int indexRune = findRune(runes,lenRunes,runeName,1);
+            if(indexRune!=-1){
+                char weaponName[32];
+                getName(weaponName,"Weapon");
+                int indexWeapon = findWeapon(weapons,lenWeapons,weaponName,1);
+                if(indexWeapon!=-1){
+                    removeRuneFromWeapon(runes,weapons,indexRune,indexWeapon);
+                }
+            }
         }else if(option==10){
         
         }else if(option==11){
@@ -358,9 +446,9 @@ int main(){
         }else if(option==14){
             showCharacters(characters,lenCharacters);
         }else if(option==15){
-
+            showWeapons(weapons,lenWeapons);
         }else if(option==16){
-
+            showRunes(runes,lenRunes);
         }
     }
 
